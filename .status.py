@@ -27,8 +27,8 @@ def get_audio_block():
     process = subprocess.Popen(command, stdout = subprocess.PIPE)
     text = process.stdout.read().decode("utf-8")
     match = volume_regex.search(text).group(0)
-    volume = match.split()[4]
-    full_text = f"VOL: {volume}"
+    volume = int(match.split()[4].replace("%", ""))
+    full_text = f"VOL: {volume:3.0f}%"
     audio_block = {"full_text": full_text, "color": WHITE}
     return audio_block
 
@@ -41,7 +41,7 @@ def _bitcoin_gen():
         try:
             price_string = btc_data["bpi"]["USD"]["rate"].split('.', 1)[0].replace(",", ".")
             new_price = float(price_string) 
-            full_text = f"BTC {price_string}$"
+            full_text = f"BTC: {price_string} $"
             if new_price > price:
                 color = GREEN
             else:
@@ -85,13 +85,13 @@ def _net_block_gen():
         up_kb = up_diff / 1024
         net_data = new_net_data
         if down_kb < 1024:
-            down_val = f"{down_kb:.1f} KB" 
+            down_val = f"{down_kb:5.1f} KB" 
         else:
-            down_val = f"{(down_kb/1024):.1f} MB"
+            down_val = f"{(down_kb/1024):5.1f} MB"
         if up_kb < 1024:
-            up_val = f"{up_kb:.1f} KB" 
+            up_val = f"{up_kb:5.1f} KB" 
         else:
-            up_val = f"{(up_kb/1024):.1f} MB"
+            up_val = f"{(up_kb/1024):5.1f} MB"
         full_text = f"UP: {up_val} | DOWN: {down_val}"
         if 0 in [down_kb, up_kb]:
             color = RED
@@ -114,7 +114,7 @@ def get_memory_block():
         color = YELLOW
         if memory_percent > 80:
             color = RED
-    full_text = f"MEM: {memory_percent}%"
+    full_text = f"MEM: {memory_percent:4.1f}%"
     memory_block = {"full_text": full_text, "color": color}
     return memory_block
 
@@ -129,11 +129,25 @@ def get_cpu_block():
         color = YELLOW
         if temperature > 80:
             color = RED
-    full_text = f"CPU: {cpu_percent}% {temperature:.1f}°"
+    full_text = f"CPU: {cpu_percent:4.1f}% {temperature:.1f}°"
     cpu_block = {"full_text": full_text, "color": color}
     return cpu_block
 
 
+def get_disk_block():
+    process = subprocess.Popen(["df",  "-h", "--total"], stdout=subprocess.PIPE)
+    filterer = subprocess.Popen(["grep", "total"], stdin=process.stdout, stdout=subprocess.PIPE) 
+    out = filterer.stdout.read().decode("utf-8")
+    vals = out.split()
+    _, _, _, free_gb, used_pc, _ = vals
+    free_pc = 100 - int(used_pc.replace("%", ""))
+    if free_pc < 5:
+        color = RED
+    else:
+        color = WHITE
+    full_text = f"Free HDD: {free_gb} = {free_pc}%"
+    disk_block = {"full_text": full_text, "color": color}
+    return disk_block
 
 def get_time_block():
     full_text = time.ctime() 
@@ -148,7 +162,7 @@ while True:
     if interval_counter >= LONG_INTERVAL:
         interval_counter = 0
         long_blocks = [get_bitcoin_block(), get_weather_block()] 
-    short_blocks = [interval_counter, get_audio_block(), get_net_block(), get_cpu_block(), get_memory_block(), get_time_block()]
+    short_blocks = [interval_counter, get_audio_block(), get_net_block(), get_cpu_block(), get_memory_block(), get_disk_block(), get_time_block()]
     blocks = [INITIAL_BLOCK] + long_blocks + short_blocks + [FINAL_BLOCK]
     print(json.dumps(blocks, ensure_ascii=False)+",")
     time.sleep(INTERVAL)
