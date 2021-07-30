@@ -4,9 +4,11 @@ import psutil
 import time
 import json
 import re
+from lxml import etree
 
-LONG_INTERVAL = 900 
+LONG_INTERVAL = 900
 INTERVAL = 1 
+NEWS_WIDTH = 48 
 
 WHITE = "#ECF0F1"
 TEAL = "#1ABC9C"
@@ -22,6 +24,36 @@ volume_regex = re.compile(r"Volume:.+")
 INITIAL_BLOCK = {"full_text": "λ [", "color": TEAL}
 FINAL_BLOCK = {"full_text": "] ", "color": TEAL}
 
+def _news_gen():
+    def rotate_string(string, step):
+        return string[step:] + string[:step] 
+    interval = 0
+    while True:
+        if interval == 0:
+            try:
+                news_addr = "https://www.bankier.pl/rss/wiadomosci.xml"
+                response = requests.get(news_addr)
+                xml = etree.fromstring(response.content)
+                titles = xml.xpath("channel/item/title")
+                feed_string = " " + " | ".join([t.text for t in titles]) 
+                color = WHITE
+            except etree.XMLSyntaxError:
+                feed_string = "News data unavailable!"
+                color = RED
+            interval = LONG_INTERVAL
+        else:
+            interval -= 1
+        feed_string = rotate_string(feed_string, 5)
+        feed_section = feed_string[:NEWS_WIDTH]
+        news_block = {"full_text": feed_section, "color": color}
+        yield news_block
+
+news_generator = _news_gen()
+
+def get_news_block():
+    news_block = next(news_generator)
+    return news_block
+
 def get_audio_block():
     command = ["pactl", "list", "sinks"]
     process = subprocess.Popen(command, stdout = subprocess.PIPE)
@@ -33,19 +65,28 @@ def get_audio_block():
     return audio_block
 
 def _bitcoin_gen():
-    price = 0
+    btc_addr = f"https://api.coindesk.com/v1/bpi/currentprice.json"
+    try:
+        response = requests.get(btc_addr)
+        btc_data = response.json()
+        price_string = btc_data["bpi"]["USD"]["rate"].split('.', 1)[0].replace(",", ".")
+        price = float(price_string) 
+    except KeyError:
+        price = 0 
     while True:
-        btc_addr = f"https://api.coindesk.com/v1/bpi/currentprice.json"
         response = requests.get(btc_addr)
         btc_data = response.json()
         try:
             price_string = btc_data["bpi"]["USD"]["rate"].split('.', 1)[0].replace(",", ".")
             new_price = float(price_string) 
-            full_text = f"BTC: {price_string} $"
+            pc_diff = (new_price/price) - 1
+            full_text = f"BTC: ${price_string} Δ{pc_diff:4.3f}%"
             if new_price > price:
                 color = GREEN
-            else:
+            elif new_price < price:
                 color = RED
+            else:
+                color = WHITE
             btc_block = {"full_text": full_text, "color": color}
             price = new_price
         except KeyError:
@@ -150,7 +191,8 @@ def get_disk_block():
     return disk_block
 
 def get_time_block():
-    full_text = time.ctime() 
+    time_comps = time.ctime().split()
+    full_text = " ".join(time_comps[:3] + ["|"] + time_comps[3:])
     timeblock = {"full_text": full_text, "color": PURPLE}
     return timeblock
 
@@ -163,7 +205,7 @@ while True:
         interval_counter = 0
         long_blocks = [get_bitcoin_block(), get_weather_block()] 
     short_blocks = [interval_counter, get_audio_block(), get_net_block(), get_cpu_block(), get_memory_block(), get_disk_block(), get_time_block()]
-    blocks = [INITIAL_BLOCK] + long_blocks + short_blocks + [FINAL_BLOCK]
+    blocks = [INITIAL_BLOCK] + [get_news_block()] +  long_blocks + short_blocks + [FINAL_BLOCK]
     print(json.dumps(blocks, ensure_ascii=False)+",")
     time.sleep(INTERVAL)
     interval_counter += INTERVAL
