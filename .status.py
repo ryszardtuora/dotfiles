@@ -79,7 +79,7 @@ def _bitcoin_gen():
         try:
             price_string = btc_data["bpi"]["USD"]["rate"].split('.', 1)[0].replace(",", ".")
             new_price = float(price_string) 
-            pc_diff = (new_price/price) - 1
+            pc_diff = ((new_price/price) - 1) * 100
             full_text = f"BTC: ${price_string} Δ{pc_diff:4.3f}%"
             if new_price > price:
                 color = GREEN

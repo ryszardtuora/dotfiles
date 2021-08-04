@@ -46,6 +46,10 @@ bindsym Mod1+Shift+c kill
 
 # start dmenu (a program launcher)
 bindsym Mod1+p exec dmenu_run
+bindsym Mod1+Tab exec rofi -show window -config .i3/rofi/config
+bindsym Mod1+i exec gnome-terminal -e ranger
+
+#
 # There also is the (new) i3-dmenu-desktop which only displays applications
 # shipping a .desktop file. It is a wrapper around dmenu, so you need that
 # installed.
@@ -189,6 +193,7 @@ bar {
 		separator #1ABC9C
 		focused_workspace ##16A085 #1ABC9C #ffffff
 	}
+	font pango:DejaVu Sans Mono 9 
 
 }
 

@@ -1,0 +1,76 @@
+* {
+    background-color:            #1F2D3A;
+    border-color:                #1ABC9C;
+    text-color:                  #1ABC9C;
+    prompt-background:           #F1C40F;
+    prompt-foreground:           #1F2D3A;
+    prompt-padding:              4px;
+    alternate-normal-background: #2C3E50;
+    alternate-normal-foreground: @text-color;
+    selected-normal-background:  #C0392B;
+    selected-normal-foreground:  #ffffff;
+    spacing:                     1;
+}
+#window {
+    border:  1;
+    padding: 0;
+}
+#mainbox {
+    border:  1;
+    padding: 2;
+}
+#message {
+    border:       5px dash 0px 0px ;
+    padding:      1px ;
+}
+#listview {
+    fixed-height: 0;
+    border:       2px dash 0px 0px ;
+    spacing:      2px ;
+    scrollbar:    true;
+    padding:      2px 0px 0px ;
+}
+#element {
+    border:  0;
+    padding: 1px ;
+}
+#element.selected.normal {
+    background-color: @selected-normal-background;
+    text-color:       @selected-normal-foreground;
+}
+#element.alternate.normal {
+    background-color: @alternate-normal-background;
+    text-color:       @alternate-normal-foreground;
+}
+#scrollbar {
+    width:        0px ;
+    border:       0;
+    handle-width: 0px ;
+    padding:      0;
+}
+#sidebar {
+    border: 2px dash 0px 0px ;
+}
+#button.selected {
+    background-color: @selected-normal-background;
+    text-color:       @selected-normal-foreground;
+}
+#inputbar {
+    spacing:    10;
+    padding:    1px ;
+}
+#case-indicator {
+    spacing:    0;
+}
+#entry {
+    padding: 4px 4px;
+    expand: false;
+    width: 20em;
+}
+#prompt {
+    padding:          @prompt-padding;
+    background-color: @prompt-background;
+    text-color:       @prompt-foreground;
+    border-radius:    2px;
+}
+
