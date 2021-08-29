@@ -80,7 +80,7 @@ def _bitcoin_gen():
             price_string = btc_data["bpi"]["USD"]["rate"].split('.', 1)[0].replace(",", ".")
             new_price = float(price_string) 
             pc_diff = ((new_price/price) - 1) * 100
-            full_text = f"BTC: ${price_string} Δ{pc_diff:4.3f}%"
+            full_text = f"BTC: ${price_string} Δ{pc_diff:3.2f}%"
             if new_price > price:
                 color = GREEN
             elif new_price < price:
@@ -103,15 +103,15 @@ def get_bitcoin_block():
 def get_weather_block():
     weather_addr = f"http://wttr.in/{LOCATION}?format=j1"
     response = requests.get(weather_addr)
-    weather_data = response.json()
     try:
+        weather_data = response.json()
         current_data = weather_data["current_condition"][0]
         temp = current_data["temp_C"]
         humidity = current_data["humidity"]
         pressure = current_data["pressure"]
         full_text = f"{temp}° HUM: {humidity}% {pressure} hPa" 
         weather_block = {"full_text": full_text, "color": YELLOW}
-    except KeyError:
+    except (KeyError, json.decoder.JSONDecodeError):
         full_text = "Weather data unavailable"
         weather_block = {"full_text": full_text, "color": RED}
     return weather_block

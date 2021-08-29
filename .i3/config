@@ -45,7 +45,7 @@ bindsym Print exec gnome-screenshot -i
 bindsym Mod1+Shift+c kill
 
 # start dmenu (a program launcher)
-bindsym Mod1+p exec dmenu_run
+bindsym Mod1+p exec dmenu_run 
 bindsym Mod1+Tab exec rofi -show window -config .i3/rofi/config
 bindsym Mod1+i exec gnome-terminal -e ranger
 
