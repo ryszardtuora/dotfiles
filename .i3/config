@@ -24,6 +24,13 @@ font pango:monospace 8
 # X core fonts rendering does not support right-to-left and this being a bitmap
 # font, it doesn’t scale on retina/hidpi displays.
 
+
+
+#GAPS
+#gaps inner 10
+#gaps outer 0
+#smart_gaps on#
+
 # use these keys for focus, movement, and resize directions when reaching for
 # the arrows is not convenient
 set $up k 
@@ -34,6 +41,9 @@ set $right l
 # use Mouse+Mod1 to drag floating windows to their wanted position
 floating_modifier Mod1
 
+# logout
+bindsym Mod1+Shift+q exec $HOME/.i3/logout.sh
+
 # start a terminal
 bindsym Mod1+Return exec $HOME/.i3/i3_shell.sh 
 #gnome-terminal #i3-sensible-terminal
@@ -41,13 +51,20 @@ bindsym Mod1+Return exec $HOME/.i3/i3_shell.sh
 # print screen
 bindsym Print exec gnome-screenshot -i
 
+# qrencode clipboard
+bindsym Mod1+q exec sselp | qrencode -o - | feh  -Z fill -
+
 # kill focused window
 bindsym Mod1+Shift+c kill
 
 # start dmenu (a program launcher)
 bindsym Mod1+p exec dmenu_run 
 bindsym Mod1+Tab exec rofi -show window -config .i3/rofi/config
-bindsym Mod1+i exec gnome-terminal -e ranger
+bindsym Mod1+i exec gnome-terminal -e ranger 
+bindsym Mod1+o open
+bindsym Mod1+m exec gnome-terminal -e "cppbrot --auto-rotate --random-colors"
+bindsym Mod1+c exec gnome-terminal -e calcurse
+bindsym Mod1+n exec gnome-terminal -e vim
 
 #
 # There also is the (new) i3-dmenu-desktop which only displays applications
@@ -110,11 +127,11 @@ bindsym Mod1+a focus parent
 #bindsym Mod1+d focus child
 
 # move the currently focused window to the scratchpad
-bindsym Mod1+Shift+minus move scratchpad
+#bindsym Mod1+Shift+minus move scratchpad
 
 # Show the next scratchpad window or hide the focused scratchpad window.
 # If there are multiple scratchpad windows, this command cycles through them.
-bindsym Mod1+minus scratchpad show
+#bindsym Mod1+minus scratchpad show
 
 # switch to workspace
 bindsym Mod1+1 workspace 1
@@ -127,6 +144,8 @@ bindsym Mod1+7 workspace 7
 bindsym Mod1+8 workspace 8
 bindsym Mod1+9 workspace 9
 bindsym Mod1+0 workspace 10
+bindsym Mod1+minus workspace 11
+bindsym Mod1+equal workspace 12
 
 # move focused container to workspace
 bindsym Mod1+Shift+1 move container to workspace 1
@@ -139,6 +158,8 @@ bindsym Mod1+Shift+7 move container to workspace 7
 bindsym Mod1+Shift+8 move container to workspace 8
 bindsym Mod1+Shift+9 move container to workspace 9
 bindsym Mod1+Shift+0 move container to workspace 10
+bindsym Mod1+Shift+- move container to workspace 11
+bindsym Mod1+Shift+= move container to workspace 12
 
 # reload the configuration file
 bindsym Mod1+Shift+z reload
@@ -147,6 +168,9 @@ bindsym Mod1+Shift+r restart
 # exit i3 (logs you out of your X session)
 bindsym Mod1+Shift+e exec "i3-nagbar -t warning -m 'You pressed the exit shortcut. Do you really want to exit i3? This will end your X session.' -b 'Yes, exit i3' 'i3-msg exit'"
 
+# keyboard mapping switching
+bindsym Mod4+Tab exec .i3/keyboard_switcher.sh
+#bindsym Mod1+shift+ exec .i3/keyboard_switcher.sh 
 
 # volume control
 bindsym Mod4+plus exec "pactl set-sink-volume 0 +5%"
@@ -177,8 +201,10 @@ mode "resize" {
 }
 
 bindsym Mod1+r mode "resize"
-
-
+bindsym Mod1+Shift+y mode "resize" resize shrink width 10px or 10 ppt mode "default"
+bindsym Mod1+Shift+u mode "resize" resize shrink height 10px or 10 ppt mode "default"
+bindsym Mod1+Shift+i mode "resize" resize grow height 10px or 10 ppt mode "default"
+bindsym Mod1+Shift+o mode "resize" resize grow width 10px or 10 ppt mode "default"
 
 #client.focused #16A085 #1ABC9C #ffffff #1ABC9C #1ABC9C 
 client.focused #16A085 #1ABC9C #ffffff #1ABC9C #16A085
@@ -187,7 +213,7 @@ client.focused #16A085 #1ABC9C #ffffff #1ABC9C #16A085
 # finds out, if available)
 bar {
         status_command python3 -u .status.py
-	separator_symbol "] ["
+	separator_symbol "]["
 	colors{
 		statusline #1ABC9C
 		separator #1ABC9C
@@ -207,4 +233,6 @@ bar {
 # Please remove the following exec line:
 #######################################################################
 exec i3-config-wizard
-exec feh --bg-scale desktopbg.jpeg
+exec .i3/wallpaper.sh 
+exec redshift
+exec nmread lineexec --no-startup-id picom -b
