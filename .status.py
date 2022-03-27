@@ -3,8 +3,12 @@ import subprocess
 import psutil
 import time
 import json
+import simplejson
 import re
+import datetime
+import datetime
 from lxml import etree
+from ssl import SSLError
 
 LONG_INTERVAL = 900
 INTERVAL = 1 
@@ -18,13 +22,15 @@ YELLOW = "#F39C12"
 PURPLE = "#be3ff2"#"#9B59B6"#"#8E44AD"
 
 LOCATION = "Warsaw" # your city 
+LOCATION = "~52.2319237,21.0067265"
 
 volume_regex = re.compile(r"Volume:.+")
 
-INITIAL_BLOCK = {"full_text": "λ [", "color": TEAL}
-FINAL_BLOCK = {"full_text": "] ", "color": TEAL}
+INITIAL_BLOCK = {"full_text": "[ λ", "color": TEAL}
+FINAL_BLOCK = {"full_text": "死 ] ", "color": TEAL}
 
 def _news_gen():
+    rotation_factor = 10 
     def rotate_string(string, step):
         return string[step:] + string[:step] 
     interval = 0
@@ -34,7 +40,17 @@ def _news_gen():
                 news_addr = "https://www.bankier.pl/rss/wiadomosci.xml"
                 response = requests.get(news_addr)
                 xml = etree.fromstring(response.content)
-                titles = xml.xpath("channel/item/title")
+                items = xml.xpath("channel/item")
+                today = datetime.datetime.today()
+                titles = []
+                for item in items:
+                    date = item.xpath("pubDate")[0]
+                    uni_date = datetime.datetime.strptime(date.text, '%a, %d %b %Y %H:%M:%S %z')
+                    uni_date = uni_date.replace(tzinfo=None)
+                    interval = today - uni_date
+                    if interval.days < 1:
+                        title = item.xpath("title")[0]
+                        titles.append(title)
                 feed_string = " " + " | ".join([t.text for t in titles]) 
                 color = WHITE
             except etree.XMLSyntaxError:
@@ -43,7 +59,7 @@ def _news_gen():
             interval = LONG_INTERVAL
         else:
             interval -= 1
-        feed_string = rotate_string(feed_string, 5)
+        feed_string = rotate_string(feed_string, rotation_factor)
         feed_section = feed_string[:NEWS_WIDTH]
         news_block = {"full_text": feed_section, "color": color}
         yield news_block
@@ -60,7 +76,7 @@ def get_audio_block():
     text = process.stdout.read().decode("utf-8")
     match = volume_regex.search(text).group(0)
     volume = int(match.split()[4].replace("%", ""))
-    full_text = f"VOL: {volume:3.0f}%"
+    full_text = f"VOL:{volume:3.0f}%"
     audio_block = {"full_text": full_text, "color": WHITE}
     return audio_block
 
@@ -71,7 +87,7 @@ def _bitcoin_gen():
         btc_data = response.json()
         price_string = btc_data["bpi"]["USD"]["rate"].split('.', 1)[0].replace(",", ".")
         price = float(price_string) 
-    except KeyError:
+    except (KeyError, SSLError):
         price = 0 
     while True:
         response = requests.get(btc_addr)
@@ -80,7 +96,7 @@ def _bitcoin_gen():
             price_string = btc_data["bpi"]["USD"]["rate"].split('.', 1)[0].replace(",", ".")
             new_price = float(price_string) 
             pc_diff = ((new_price/price) - 1) * 100
-            full_text = f"BTC: ${price_string} Δ{pc_diff:3.2f}%"
+            full_text = f"BTC:${price_string} Δ{pc_diff:3.2f}%"
             if new_price > price:
                 color = GREEN
             elif new_price < price:
@@ -89,7 +105,7 @@ def _bitcoin_gen():
                 color = WHITE
             btc_block = {"full_text": full_text, "color": color}
             price = new_price
-        except KeyError:
+        except (KeyError, SSLError):
             full_text = "BTC data unavailable"
             btc_block = {"full_text": full_text, "color": RED}
         yield btc_block
@@ -109,9 +125,9 @@ def get_weather_block():
         temp = current_data["temp_C"]
         humidity = current_data["humidity"]
         pressure = current_data["pressure"]
-        full_text = f"{temp}° HUM: {humidity}% {pressure} hPa" 
+        full_text = f"{temp}° HUM:{humidity}% {pressure} hPa" 
         weather_block = {"full_text": full_text, "color": YELLOW}
-    except (KeyError, json.decoder.JSONDecodeError):
+    except (KeyError, simplejson.errors.JSONDecodeError, SSLError, json.decoder.JSONDecodeError, requests.exceptions.ConnectionError):
         full_text = "Weather data unavailable"
         weather_block = {"full_text": full_text, "color": RED}
     return weather_block
@@ -176,8 +192,8 @@ def get_cpu_block():
 
 
 def get_disk_block():
-    process = subprocess.Popen(["df",  "-h", "--total"], stdout=subprocess.PIPE)
-    filterer = subprocess.Popen(["grep", "total"], stdin=process.stdout, stdout=subprocess.PIPE) 
+    process = subprocess.Popen(["df",  "-h"], stdout=subprocess.PIPE)
+    filterer = subprocess.Popen(["grep", "/dev/sda2"], stdin=process.stdout, stdout=subprocess.PIPE) 
     out = filterer.stdout.read().decode("utf-8")
     vals = out.split()
     _, _, _, free_gb, used_pc, _ = vals
@@ -186,7 +202,7 @@ def get_disk_block():
         color = RED
     else:
         color = WHITE
-    full_text = f"Free HDD: {free_gb} = {free_pc}%"
+    full_text = f"HDD: {free_gb}={free_pc}%"
     disk_block = {"full_text": full_text, "color": color}
     return disk_block
 
@@ -203,7 +219,8 @@ interval_counter = LONG_INTERVAL
 while True:
     if interval_counter >= LONG_INTERVAL:
         interval_counter = 0
-        long_blocks = [get_bitcoin_block(), get_weather_block()] 
+        long_blocks = [get_bitcoin_block(), 
+                get_weather_block()] 
     short_blocks = [interval_counter, get_audio_block(), get_net_block(), get_cpu_block(), get_memory_block(), get_disk_block(), get_time_block()]
     blocks = [INITIAL_BLOCK] + [get_news_block()] +  long_blocks + short_blocks + [FINAL_BLOCK]
     print(json.dumps(blocks, ensure_ascii=False)+",")
