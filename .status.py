@@ -191,9 +191,33 @@ def get_cpu_block():
     return cpu_block
 
 
+def get_battery_block():
+    battery_data = psutil.sensors_battery()
+    battery_percent = round(battery_data.percent, 1)
+
+    battery_seconds = battery_data.secsleft
+    battery_minutes = battery_seconds // 60
+
+    plugged_in = battery_data.power_plugged
+
+    if plugged_in:
+        color = GREEN
+        plugged_symbol = "⌁"
+    else:
+        plugged_symbol = "X"
+        if battery_minutes < 30:
+            color = RED
+        else:
+            color = YELLOW
+
+    full_text = f"{battery_percent}%|{battery_minutes}min {plugged_symbol}"
+    battery_block = {"full_text": full_text, "color": color}
+    return battery_block
+
+
 def get_disk_block():
     process = subprocess.Popen(["df",  "-h"], stdout=subprocess.PIPE)
-    filterer = subprocess.Popen(["grep", "/dev/sda2"], stdin=process.stdout, stdout=subprocess.PIPE) 
+    filterer = subprocess.Popen(["grep", "/dev/sda2"], stdin=process.stdout, stdout=subprocess.PIPE)
     out = filterer.stdout.read().decode("utf-8")
     vals = out.split()
     _, _, _, free_gb, used_pc, _ = vals
@@ -222,6 +246,8 @@ while True:
         long_blocks = [get_bitcoin_block(), 
                 get_weather_block()] 
     short_blocks = [interval_counter, get_audio_block(), get_net_block(), get_cpu_block(), get_memory_block(), get_disk_block(), get_time_block()]
+    if psutil.sensors_battery():
+        short_blocks.insert(-1, get_battery_block())
     blocks = [INITIAL_BLOCK] + [get_news_block()] +  long_blocks + short_blocks + [FINAL_BLOCK]
     print(json.dumps(blocks, ensure_ascii=False)+",")
     time.sleep(INTERVAL)
