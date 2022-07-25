@@ -16,6 +16,8 @@ Plugin 'tmhedberg/SimpylFold'
 
 Plugin 'preservim/nerdtree'
 
+Plugin 'vim-airline/vim-airline'
+
 " Plugin 'vim-syntastic/syntastic'
 Plugin 'dense-analysis/ale'
 

@@ -180,7 +180,10 @@ def get_cpu_block():
     color = WHITE
     temperature_data = psutil.sensors_temperatures()
     k10_data = temperature_data["k10temp"]
-    die_data = [e for e in k10_data if e.label == "Tdie"][0]
+    if len(k10_data) == 1:
+        die_data = k10_data[0]
+    else:
+        die_data = [e for e in k10_data if e.label == "Tdie"][0]
     temperature = die_data.current
     if temperature > 55:
         color = YELLOW
@@ -216,12 +219,17 @@ def get_battery_block():
 
 
 def get_disk_block():
-    process = subprocess.Popen(["df",  "-h"], stdout=subprocess.PIPE)
-    filterer = subprocess.Popen(["grep", "/dev/sda2"], stdin=process.stdout, stdout=subprocess.PIPE)
-    out = filterer.stdout.read().decode("utf-8")
-    vals = out.split()
-    _, _, _, free_gb, used_pc, _ = vals
-    free_pc = 100 - int(used_pc.replace("%", ""))
+    process = subprocess.Popen(["df",  "-T"], stdout=subprocess.PIPE)
+    filterer = subprocess.Popen(["grep", "ext4"], stdin=process.stdout, stdout=subprocess.PIPE)
+    out = filterer.stdout.read().decode("utf-8").split("\n")[:-1]
+    free_space = 0
+    total_space = 0
+    for partition_line in out:
+        _, _, _, used, free, _, _ = partition_line.split()
+        free_space += int(free)
+        total_space += int(free) + int(used) 
+    free_pc = 100 * round(free_space/total_space, 1)
+    free_gb = round(free_space / (1024 * 1024), 1)
     if free_pc < 5:
         color = RED
     else:
