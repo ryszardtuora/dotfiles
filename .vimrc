@@ -22,6 +22,8 @@ Plugin 'vim-airline/vim-airline'
 Plugin 'dense-analysis/ale'
 
 Plugin 'nvie/vim-flake8'
+
+Plugin 'preservim/tagbar'
 " add all your plugins here (note older versions of Vundle
 " used Bundle instead of Plugin)
 
@@ -33,7 +35,7 @@ filetype plugin indent on    " required
 
 
 "split navigations
-nnoremap <C-M> :vsplit<CR>
+nnoremap <C-M> :split<CR>
 nnoremap <C-J> <C-W><C-J>
 nnoremap <C-K> <C-W><C-K>
 nnoremap <C-L> <C-W><C-L>
@@ -44,6 +46,9 @@ nnoremap <C-H> <C-W><C-H>
 
 "NERDTree
 nnoremap <C-t> :NERDTreeToggle<CR>
+
+"TagBar
+nmap <C-Y> :TagbarToggle<CR>
 
 nnoremap <C-N> :set number!<CR>
 
@@ -69,5 +74,4 @@ let python_highlight_all=1
 syntax on
 
 nnoremap <space> za
-
 
