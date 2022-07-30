@@ -9,6 +9,7 @@ import datetime
 import datetime
 from lxml import etree
 from ssl import SSLError
+from requests.exceptions import ConnectionError
 
 LONG_INTERVAL = 900
 INTERVAL = 1 
@@ -53,7 +54,7 @@ def _news_gen():
                         titles.append(title)
                 feed_string = " " + " | ".join([t.text for t in titles]) 
                 color = WHITE
-            except etree.XMLSyntaxError:
+            except (etree.XMLSyntaxError, ConnectionError):
                 feed_string = "News data unavailable!"
                 color = RED
             interval = LONG_INTERVAL
@@ -87,12 +88,12 @@ def _bitcoin_gen():
         btc_data = response.json()
         price_string = btc_data["bpi"]["USD"]["rate"].split('.', 1)[0].replace(",", ".")
         price = float(price_string) 
-    except (KeyError, SSLError):
+    except (KeyError, SSLError, ConnectionError):
         price = 0 
     while True:
-        response = requests.get(btc_addr)
-        btc_data = response.json()
         try:
+            response = requests.get(btc_addr)
+            btc_data = response.json()
             price_string = btc_data["bpi"]["USD"]["rate"].split('.', 1)[0].replace(",", ".")
             new_price = float(price_string) 
             pc_diff = ((new_price/price) - 1) * 100
@@ -105,7 +106,7 @@ def _bitcoin_gen():
                 color = WHITE
             btc_block = {"full_text": full_text, "color": color}
             price = new_price
-        except (KeyError, SSLError):
+        except (KeyError, SSLError, ConnectionError):
             full_text = "BTC data unavailable"
             btc_block = {"full_text": full_text, "color": RED}
         yield btc_block
@@ -118,8 +119,8 @@ def get_bitcoin_block():
 
 def get_weather_block():
     weather_addr = f"http://wttr.in/{LOCATION}?format=j1"
-    response = requests.get(weather_addr)
     try:
+        response = requests.get(weather_addr)
         weather_data = response.json()
         current_data = weather_data["current_condition"][0]
         temp = current_data["temp_C"]
@@ -127,7 +128,7 @@ def get_weather_block():
         pressure = current_data["pressure"]
         full_text = f"{temp}° HUM:{humidity}% {pressure} hPa" 
         weather_block = {"full_text": full_text, "color": YELLOW}
-    except (KeyError, simplejson.errors.JSONDecodeError, SSLError, json.decoder.JSONDecodeError, requests.exceptions.ConnectionError):
+    except (KeyError, simplejson.errors.JSONDecodeError, SSLError, json.decoder.JSONDecodeError, ConnectionError):
         full_text = "Weather data unavailable"
         weather_block = {"full_text": full_text, "color": RED}
     return weather_block
