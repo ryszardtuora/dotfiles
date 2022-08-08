@@ -59,10 +59,11 @@ bindsym Mod1+Shift+c kill
 
 # start dmenu (a program launcher)
 bindsym Mod1+p exec dmenu_run 
+bindsym Mod1+m exec i3-input -F 'mark %s' -P "Mark as:"
+bindsym Mod1+g exec i3-input -F '[con_mark="%s"] focus' -P "Go to:"""'""]'""''
 bindsym Mod1+Tab exec rofi -show window -config .i3/rofi/config
 bindsym Mod1+i exec gnome-terminal -e ranger 
 bindsym Mod1+o open
-bindsym Mod1+m exec gnome-terminal -e "cppbrot --auto-rotate --random-colors"
 bindsym Mod1+c exec gnome-terminal -e calcurse
 bindsym Mod1+n exec gnome-terminal -e vim
 
