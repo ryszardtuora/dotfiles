@@ -24,6 +24,9 @@ Plugin 'dense-analysis/ale'
 Plugin 'nvie/vim-flake8'
 
 Plugin 'preservim/tagbar'
+
+Plugin 'junegunn/goyo.vim'
+
 " add all your plugins here (note older versions of Vundle
 " used Bundle instead of Plugin)
 
@@ -47,8 +50,8 @@ nnoremap <C-H> <C-W><C-H>
 "NERDTree
 nnoremap <C-t> :NERDTreeToggle<CR>
 
-"TagBar
-nmap <C-Y> :TagbarToggle<CR>
+"Tagbar
+nnoremap <C-Y> :TagbarToggle<CR>
 
 nnoremap <C-N> :set number!<CR>
 
